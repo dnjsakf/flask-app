@@ -1,44 +1,108 @@
-{% macro render_field(field, placeholder=None) %}
-{% if field.errors %}
-<div>
-{% elif field.flags.error %}
-<div>
-{% else %}
-<div>
-{% endif %}
-    {% set css_class = 'form-control ' + kwargs.pop('class', '') %}
-    {{ field(class=css_class, placeholder=placeholder, **kwargs) }}
-</div>
-{% endmacro %}
+{% extends "main.html" %}
 
-<div>
-  <div>
-    <legend>Sign Up</legend>
-    <form method="POST" action="." accept-charset="UTF-8" role="form">
-      {{ form.csrf_token }}
-      {{ render_field(form.email, placeholder="Your Email Address", autofocus="") }}
-      {{ render_field(form.password, placeholder="Password") }}
-      {{ render_field(form.re_password, placeholder="Check Password") }}
-      {{ render_field(form.name, placeholder="Your Name", ) }}
-      <button type="submit" name="submit">Sign Up</button>
-    </form>
-    {% with errors = get_flashed_messages(category_filter=["error"]) %}
-    {% if errors %}
+{% block header %}
+  <legend>{% block title %}Sign Up{% endblock %}</legend>
+{% endblock %}
+
+{% block content %}
     <div>
-    {% for error in errors %}
-    {{ error }}<br>
-    {% endfor %}
+        <form id="signUpForm" method="POST" action="." accept-charset="UTF-8" role="form" class="row g-3 needs-validation" novalidate>
+            {{ form.csrf_token }}
+            <div class="col-md-12">
+                <label for="inputEmail" class="form-label">{{ form.email.label }}</label>
+                {{ form.email(id="inputEmail", class="form-control", placeholder="Your Email Address", autofocus="") }}
+                <div class="invalid-feedback">
+                    {% if form.email.errors %}
+                        {% for error in form.email.errors %}
+                            {{ error }}<br>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label for="inputPassword" class="form-label">{{ form.password.label }}</label>
+                {{ form.password(id="inputPassword", class="form-control", placeholder="Password") }}
+                <div class="invalid-feedback">
+                    {% if form.password.errors %}
+                        {% for e in form.password.errors %}
+                            {{ e }}<br>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label for="inputRePassword" class="form-label">Re-Password</label>
+                {{ form.re_password(id="inputRePassword", class="form-control", placeholder="Check Password") }}
+                <div class="invalid-feedback">
+                    {% if form.re_password.errors %}
+                        error!
+                        {% for error in form.re_password.errors %}
+                            {{ error }}<br>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>      
+            <div class="col-md-6">
+                <label for="inputName" class="form-label">Name</label>
+                {{ form.name(id="inputName", class="form-control", placeholder="Your Name", ) }}
+                <div class="invalid-feedback">
+                    {% if form.name.errors %}
+                        {% for error in form.name.errors %}
+                            {{ error }}<br>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-12">
+                <button type="submit" name="submit" class="btn btn-primary">Sign Up</button>
+            </div>
+        </form>
+        {% with errors = get_flashed_messages(category_filter=["error"]) %}
+            {% if errors %}
+            <legend>errors</legend>
+            <div>
+                {% for error in errors %}
+                    {{ error }}<br>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+        {% if form.errors %}
+            <legend>form.errors</legend>
+            <div>
+            {% for field, error in form.errors.items() %}
+                {% for e in error %}
+                    {{ e }}<br>
+                {% endfor %}
+            {% endfor %}
+            </div>
+        {% endif %}
     </div>
-    {% endif %}
-    {% endwith %}
-    {% if form.errors %}
-    <div>
-    {% for field, error in form.errors.items() %}
-    {% for e in error %}
-    {{ e }}<br>
-    {% endfor %}
-    {% endfor %}
-    {% endif %}
-    </div>
-  </div>
-</div>
+    <script>  
+        $('#signUpForm').bootstrapValidator({
+            feedbackIcons: {
+                valid: 'glyphicon glyphicon-ok',
+                invalid: 'glyphicon glyphicon-remove',
+                validating: 'glyphicon glyphicon-refresh'
+            },
+            fields: {
+                inputPassword: {
+                    validators: {
+                        identical: {
+                            field: 'inputRePassword',
+                            message: 'The password and its confirm are not the same'
+                        }
+                    }
+                },
+                inputRePassword: {
+                    validators: {
+                        identical: {
+                            field: 'inputPassword',
+                            message: 'The password and its confirm are not the same'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+{% endblock %}

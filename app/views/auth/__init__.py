@@ -1,3 +1,2 @@
-from .controllers import *
-from .models import *
-from .forms import *
+from app.views.auth.controllers import *
+from app.views.auth.forms import *

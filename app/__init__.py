@@ -1,4 +1,6 @@
-from flask import Flask, render_template
+import os
+
+from flask import Flask, render_template, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 # Initialize Flask App
@@ -19,7 +21,18 @@ db.create_all()
 # Error Handler: Not Found
 @app.errorhandler(404)
 def not_found(error):
-    return ( render_template('404.html', error=error), 404 )
+  return ( render_template('404.html', error=error), 404 )
+    
+@app.context_processor
+def override_url_for():
+  return dict(url_for=dated_url_for)
+
+def dated_url_for(endpoint, **values):
+  if endpoint == "static":
+    filename = values.get('filename', None)
+    if filename:
+      values['q'] = int(os.stat(os.path.join(app.static_folder, filename)).st_mtime)
+  return url_for(endpoint, **values)
 
 # Register Blueprints
 from app.views import view as view_index

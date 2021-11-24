@@ -1,0 +1,10 @@
+{% extends "index.html" %}
+
+{% block content %}
+    <h1>Hello, World!!!
+    {% with msgs = get_flashed_messages(category_filter=["signin"]) %}
+    {% if msgs %}
+    {{ msgs[-1] }}
+    {% endif %}
+    {% endwith %}</h1>
+{% endblock %}

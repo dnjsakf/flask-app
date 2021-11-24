@@ -1,13 +1,13 @@
+import bcrypt
+
 from flask import (
   Blueprint, render_template,
   flash, session, redirect, url_for
 )
 
-from werkzeug.security import check_password_hash, generate_password_hash
-
 from app import db
+from app.models import User
 from app.views.auth.forms import LoginForm, RegisterForm
-from app.views.auth.models import User
 
 view = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -17,8 +17,8 @@ def signin():
 
   if form.validate_on_submit():
     user = User.query.filter_by(email=form.email.data).first()
-
-    if user and check_password_hash(user.password, form.password.data):
+    
+    if user and bcrypt.checkpw(form.password.data.encode("utf-8"), user.password.encode("utf-8")):
         session["user_id"] = user.email
 
         flash(user.name, "signin")
@@ -41,7 +41,7 @@ def signup():
     if not user:
       new_user = User(
         email = form.email.data,
-        password = generate_password_hash(form.password.data),
+        password = bcrypt.hashpw(form.password.data.encode("utf-8"), bcrypt.gensalt()).decode("utf-8"),
         name = form.name.data
       )
       db.session.add(new_user)
