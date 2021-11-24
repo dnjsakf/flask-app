@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-    <div>
+    <div class="container">
         <form id="signUpForm" method="POST" action="." accept-charset="UTF-8" role="form" class="row g-3 needs-validation" novalidate>
             {{ form.csrf_token }}
             <div class="col-md-12">
@@ -54,7 +54,8 @@
                 </div>
             </div>
             <div class="col-12">
-                <button type="submit" name="submit" class="btn btn-primary">Sign Up</button>
+                <button type="submit" class="btn btn-primary">Sign Up</button>
+                <button type="button" class="btn btn-primary">Cancel</button>
             </div>
         </form>
         {% with errors = get_flashed_messages(category_filter=["error"]) %}
@@ -78,31 +79,4 @@
             </div>
         {% endif %}
     </div>
-    <script>  
-        $('#signUpForm').bootstrapValidator({
-            feedbackIcons: {
-                valid: 'glyphicon glyphicon-ok',
-                invalid: 'glyphicon glyphicon-remove',
-                validating: 'glyphicon glyphicon-refresh'
-            },
-            fields: {
-                inputPassword: {
-                    validators: {
-                        identical: {
-                            field: 'inputRePassword',
-                            message: 'The password and its confirm are not the same'
-                        }
-                    }
-                },
-                inputRePassword: {
-                    validators: {
-                        identical: {
-                            field: 'inputPassword',
-                            message: 'The password and its confirm are not the same'
-                        }
-                    }
-                }
-            }
-        });
-    </script>
 {% endblock %}

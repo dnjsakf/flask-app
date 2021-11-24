@@ -1,7 +1,8 @@
 import bcrypt
+import pprint
 
 from flask import (
-  Blueprint, render_template,
+  Blueprint, render_template, request, make_response,
   flash, session, redirect, url_for
 )
 
@@ -15,6 +16,8 @@ view = Blueprint("auth", __name__, url_prefix="/auth")
 def signin():
   form = LoginForm()
 
+  pprint.pprint(request.form)
+
   if form.validate_on_submit():
     user = User.query.filter_by(email=form.email.data).first()
     
@@ -23,7 +26,12 @@ def signin():
 
         flash(user.name, "signin")
 
-        return ( redirect(url_for("main.index")), 302 )
+        resp = make_response(redirect(url_for("main.index")))
+
+        if request.form.get("remember"):
+          resp.set_cookie("remember", user.email, max_age=60*60*24*30)
+
+        return ( resp, 302 )
 
     else:
       flash("Wrong email or password", "error")
