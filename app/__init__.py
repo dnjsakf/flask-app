@@ -2,6 +2,7 @@ import os
 
 from flask import Flask, render_template, url_for
 from flask_sqlalchemy import SQLAlchemy
+from flask_graphql import GraphQLView
 
 # Initialize Flask App
 app = Flask(
@@ -43,3 +44,13 @@ app.register_blueprint(view_auth)  # url_prefix="/auth"
 # Build the database:
 # This will create the database file using SQLAlchemy
 db.create_all()
+
+from app.gql import schema
+app.add_url_rule(
+    '/graphql',
+    view_func=GraphQLView.as_view(
+        'graphql',
+        schema=schema,
+        graphiql=True
+    )
+)
