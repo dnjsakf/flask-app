@@ -7,4 +7,69 @@
     {{ msgs[-1] }}
     {% endif %}
     {% endwith %}</h1>
+    
+    <table
+        id="table"
+        data-toggle="table"
+        data-height="460"
+        data-ajax="ajaxUserList"
+        data-search="true"
+        data-side-pagination="server"
+        data-pagination="true"
+    >
+        <thead>
+            <tr>
+                <th data-field="email">Email</th>
+                <th data-field="name">Name</th>
+            </tr>
+        </thead>
+    </table>
+    <script>
+        // your custom ajax request here
+        function ajaxUserList(params) {
+            console.log( params );
+            
+            $.ajax({
+                method: "post",
+                url: "/graphql",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                data: JSON.stringify({
+                    query: `query getUserList{
+                        userList {
+                            email
+                            name
+                        }
+                    }`,
+                    variables: {
+                    }
+                }),
+                success: function(resp){
+                    console.log( resp );
+                    params.success({
+                        rows: resp.data.userList
+                    });
+                }
+            });
+            /*
+            var data = gql({
+                data: {
+                    query: `{
+                        userList {
+                            email
+                            name
+                        }
+                    }`
+                }
+            }).then(function(resp){
+                console.log( resp );
+                params.success({
+                    "rows": resp.data.userList,
+                    "total": resp.data.userList.length
+                },null,{});
+            });
+            */
+        }
+    </script>
 {% endblock %}
