@@ -36,14 +36,13 @@
                     "Content-Type": "application/json",
                 },
                 data: JSON.stringify({
-                    query: `query getUserList{
-                        userList {
+                    query: `query getUserList($search: String, $offset: Int, $limit: Int){
+                        userList (search: $search, offset: $offset, limit: $limit){
                             email
                             name
                         }
                     }`,
-                    variables: {
-                    }
+                    variables: params.data
                 }),
                 success: function(resp){
                     console.log( resp );

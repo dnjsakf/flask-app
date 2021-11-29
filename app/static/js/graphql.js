@@ -8,35 +8,3 @@ var gql = axios.create({
         "Accept": "application/json"
     }
 });
-
-var getUserList = function(){
-    return gql({
-        data: {
-            query: `{
-                userList {
-                    email
-                    name
-                }
-            }`
-        }
-    });
-}
-
-var userList = getUserList();
-
-
-async function test(){
-    var data = gql({
-        data: {
-            query: `{
-                userList {
-                    email
-                    name
-                }
-            }`
-        }
-    }).then(await function(resp){
-       return resp.data; 
-    });
-    return data;
-}
