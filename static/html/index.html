@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style type="text/css">
+    * { padding: 0; margin: 0; box-sizing: border-box; }
+    html, body { height: 100%; width: 100%; background-color: white; }
+
+    .row::after { content: ""; display: block; clear: both; }
+    .row > div[class^="col"] { float: left; position: relative; }
+
+    .middle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    .v-middle { position: absolute; top: 50%; transform: translateY(-50%); }
+    .h-middle { position: absolute; left: 50%; transform: translateX(-50%); }
+
+  </style>
+<title>Document</title>
+</head>
+<body>
+  <div id="matrix">
+  </div>
+  <script type="text/javascript">
+    /* Polyfill */
+
+    // Array.isArray
+    if( typeof(Array.isArray) == 'undefined' ){
+      Array.isArray = function(obj){
+        return (obj instanceof Object && obj instanceof Array);
+      }
+    }
+
+    // Array.clone
+    if( typeof(Array.clone) == 'undefined' ){
+      Array.clone = function(items){
+        const retarr = [];
+        if( Array.isArray(items) ){
+          items.forEach(function(item){
+            retarr.push(item); 
+          });
+        }
+        return retarr;
+      }
+    }
+
+    // Object.clone
+    if( typeof(Object.clone) == 'undefined' ){
+      Object.clone = function(source, exclude){
+        let retobj = {};
+        Object.keys(source).forEach(function(srckey){
+          let srcval = source[srckey];
+          if( srcval && srckey instanceof Object && !Array.isArray(srckey) ){
+            let _exclude = null;
+            if( exclude ){
+              _exclude = exclude.map(function(fieldName){
+                return srckey+"."+fieldName;
+              });
+            }
+            retobj[srckey] = Object.copy({}, srcval, _exclude);
+          } else {
+            retobj[srckey] = srcval;
+          }
+        });
+        return retobj;
+      }
+    }
+
+    // Object.extends
+    if( typeof(Object.extends) == 'undefined' ){
+      Object.extends = function(source, target, exclude){
+        let retobj =  ( source || {} ); // Object.clone(source, exclude);
+        if( target && target instanceof Object ){
+          Object.keys(target).forEach(function(tgtkey){
+            let tgtval = target[tgtkey];
+            if( tgtval && tgtkey instanceof Object && !Array.isArray(tgtkey) ){
+              retobj[tgtkey] = Object.extends({}, tgtval, exclude);
+            } else {
+              if( Array.isArray(exclude) && exclude.indexOf(tgtkey) > -1 ){
+                
+              } else {
+                retobj[tgtkey] = tgtval;
+              }
+            }
+          });
+        }
+        return retobj;
+      }
+    }
+
+    // Element.prototype.removeAll
+    if( typeof(Element.prototype.removeAllChild) == 'undefined' ){
+      Element.prototype.removeAllChild = function(){
+        const el = this;
+        let lastChild = null;
+        while((lastChild = el.lastElementChild) != null){
+          el.removeChild(lastChild);
+        }
+      }
+    }
+    
+    // Element.prototype.setText
+    if( typeof(Element.prototype.removeText) == 'undefined' ){
+      Element.prototype.removeText = function(text){
+        const el = this;
+        if( el.__text ){
+          el.removeChild(el.__text);
+          el.__text = null;
+        }
+        return el;
+      }
+    }
+
+    // Element.prototype.setText
+    if( typeof(Element.prototype.setText) == 'undefined' ){
+      Element.prototype.setText = function(text){
+        const el = this;
+        if( text ){
+          el.removeText();
+          el.__text = el.appendChild(document.createTextNode(text));
+        }
+        return el;
+      }
+    }
+
+    Element.prototype.oldAddEventListener = Element.prototype.addEventListener;
+    Element.prototype.addEventListener = function(type, listener, opts){
+      this.binded = ( this.binded || [] ).concat({
+        type: type,
+        listener: listener,
+        opts: opts
+      });
+      this.oldAddEventListener(type, listener, opts);
+    }
+  </script>
+
+  <script type="text/javascript">
+    /** Functions **/
+    function createElement(childObject, parent){
+      if( childObject instanceof Object ){
+        if( Array.isArray(childObject) ){
+          return childObject.map(function(child, idx){
+            child.index = idx;
+            childList = createElement(child, parent);
+            parent.childList = (parent.childList||[]).concat(childList);
+            return childList;
+          });
+        } else {
+          /**
+           * @Return : Object or Array
+           **/
+          const tag = Object.extends(
+                document.createElement(childObject.tagName),
+                childObject,
+                [ "tagName", "parent", "text", "style" ]
+              );
+
+          if( parent ){
+            parent.appendChild(tag);
+            tag.parent = parent;
+          }
+          
+          if( childObject.text ){
+            if( typeof(tag.text) == "undefined" ){
+              tag.text = childObject.text;
+            }
+            tag.setText(childObject.text);
+          }
+
+          if( childObject.style ){
+            tag.setAttribute("style", childObject.style); 
+          }
+
+          if( tag.events ){
+            tag.addEventListener("click", tag.events.onClick);
+          }
+
+          if( tag.childList ){
+            tag.childList = createElement(tag.childList, tag);
+          }
+
+          if( tag.onLoad && typeof(tag.onLoad) == "function" ){
+            tag.onLoad(parent, tag);
+          }
+
+          return tag;
+        }
+      } else {
+        throw Error("is not Object.");
+      }
+    }
+  </script>
+  <script type="text/javascript">
+    // Element.prototype.createMatrix
+    if( typeof(Object.prototype.createMatrix) == 'undefined' ){
+      Object.prototype.createMatrix = function(opt){
+        const el = this;
+        const config = Object.extends({
+          rows: 3,
+          cols: 3,
+          rowConfig: {
+            className: "",
+          },
+          colConfig: {
+            className: "",
+          }
+        }, opt);
+
+        const p = new MatrixObject(config, el);
+        p.init(config);
+
+        return p;
+      }
+    }
+
+    function MatrixObject(config, el){
+      this.el = el;
+      this.config = config;
+      this.matrix = null;
+    }
+
+    MatrixObject.prototype = (function(){
+
+      function _makeConfig(self, config){
+        const autoHeight = !!config.autoHeight;
+        const width = (config.width || self.el.offsetWidth) / config.cols;
+        const height = (config.height || self.el.offsetHeight) / config.rows;
+        const widthText = width+"px";
+        const heightText = autoHeight && height > 0 ? ( height+"px" ) : "1em"; 
+
+        const rowConfig = Object.extends({
+            tagName: "div",
+            className: "row"+( config.rowConfig.className ? " "+config.rowConfig.className : "" ),
+          }
+          , config.rowConfig
+          , [ "className" ]);
+
+        const colConfig = Object.extends({
+            tagName: "div",
+            className: "col"+( config.colConfig.className ? " "+config.colConfig.className : "" ),
+            style: "width: "+widthText+ "; height: "+heightText+";"
+          }
+          , config.colConfig
+          , [ "className" ]);
+
+        const matrixArr = Array((config.rows)).fill(Array((config.cols)).fill(null));
+        const matrix = matrixArr.map(function(row){
+          return Object.extends(rowConfig, {
+            childList: row.map(function(col){
+              return colConfig;
+            })
+          })
+        });
+
+        return matrix;
+      }
+      
+      function _init(self, config){
+        self.el.removeAllChild();
+
+        const matrixConfig = _makeConfig(self, config);
+        const matrixElements = createElement(matrixConfig, self.el);
+
+        if( config.width ){
+          self.el.setAttribute("style", self.el.style.cssText + " width: "+config.width+"px;");
+        }
+        if( config.height ){
+          self.el.setAttribute("style", self.el.style.cssText + " height: "+config.height+"px;");
+        }
+        
+        if( self.el.offsetHeight == 0 ){
+          let height = 0;
+          matrixElements.forEach(function(row){
+            let maxColHeight = 0;
+            row.childList.forEach(function(col){
+              if( col.offsetHeight > maxColHeight ){
+                maxColHeight = col.offsetHeight;
+              }
+            });
+            height += maxColHeight;
+          });
+          self.el.setAttribute("style", self.el.style.cssText + " height: "+height+"px;");
+        }
+      }
+
+      return {
+        init: function(config){
+          return _init(this, config);
+        }
+      }
+
+    })();
+  </script>
+
+  <script type="text/javascript">
+    const matrix = document.getElementById("matrix").createMatrix({
+      rows: 3,
+      cols: 3,
+      width: 600,
+      height: 600,
+      autoHeight: true,
+      rowConfig: {
+        className: "aa",
+      },
+      colConfig: {
+        className: "bb",
+        onLoad: function(parent, el){
+          el.createMatrix({
+            rows: 3,
+            cols: 1,
+            autoHeight: true,
+            colConfig: {
+              childList: {
+                tagName: "span",
+                className: "middle",
+                onLoad: function(parent2, el2){
+                  // el2.setText("row-"+(parent2.parent.index)+"-col-"+el2.parent.index);
+                  el2.setText((parent2.parent.index)+"-"+el2.parent.index);
+                }
+              }
+            }
+          });
+        }
+      }
+    });
+    
+  </script>
+</body>
+</html>
